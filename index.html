@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Link to Vue.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.10/dist/vue.js"></script>
+  <!-- importing the lessons -->
+  <script src="lessons.js"></script>
+  <!-- link to bootstrap 5 css cdn -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous" />
+  <!-- link to font awesome 6.2 css cdn -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
+    integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <title>Activities</title>
+</head>
+
+<body class="bg-light">
+  <!-- Mounting an app -->
+  <div id="app">
+    <!-- navbar -->
+    <nav class="navbar fixed-top navbar-expand-lg navbar-dark bg-dark py-3">
+      <div class="container-fluid">
+        <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+          aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav mb-lg-0 container-fluid">
+            <li class="nav-item">
+              <button v-if="showLessonPage" class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas"
+                data-bs-target="#offcanvasFilter" aria-controls="offcanvasFilter">
+                <i class="fa-solid fa-filter"></i> Show Filter
+              </button>
+              <button v-else disabled class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas"
+                data-bs-target="#offcanvasFilter" aria-controls="offcanvasFilter">
+                <i class="fa-solid fa-filter"></i> Show Filter
+              </button>
+            </li>
+            <li class="nav-item ms-auto">
+              <!-- disables the search field if the user is on checkout page -->
+              <input v-if="showLessonPage" v-on:keyup="search" v-model="searchTerm" class="form-control" type="search"
+                placeholder="Search" aria-label="Search" />
+              <input v-else disabled v-on:keyup="search" v-model="searchTerm" class="form-control" type="search"
+                placeholder="Search" aria-label="Search" />
+            </li>
+            <li class="nav-item ms-auto">
+              <!-- disables the button if the cart length is 0 -->
+              <button :disabled="cart.length == 0" v-on:click="showCheckoutPage" v-if="showLessonPage"
+                class="btn btn-outline-light" type="submit">
+                <i class="fa-solid fa-cart-shopping"></i> Checkout ({{cart.length}})
+              </button>
+              <button v-on:click="showCheckoutPage" v-else class="btn btn-outline-light ms-3" type="submit">
+                <i class="fa-solid fa-home"></i> Home
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- offcanvas -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasFilter" aria-labelledby="offcanvasFilterLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title display-5" id="offcanvasFilterLabel">Filter</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <div>
+          <p>Filter your results by selecting one of the following options</p>
+          <div class="form-check">
+            <input v-model="sortBy" v-bind:value="'subject'" class="form-check-input" type="radio" name="filter"
+              id="subject" checked>
+            <label class="form-check-label" for="subject">
+              Subject
+            </label>
+          </div>
+          <div class="form-check">
+            <input v-model="sortBy" v-bind:value="'location'" class="form-check-input" type="radio" name="filter"
+              id="location">
+            <label class="form-check-label" for="location">
+              Location
+            </label>
+          </div>
+          <div class="form-check">
+            <input v-model="sortBy" v-bind:value="'price'" class="form-check-input" type="radio" name="filter"
+              id="price">
+            <label class="form-check-label" for="price">
+              Price
+            </label>
+          </div>
+          <div class="form-check">
+            <input v-model="sortBy" v-bind:value="'spaces'" class="form-check-input" type="radio" name="filter"
+              id="spaces">
+            <label class="form-check-label" for="spaces">
+              Availability
+            </label>
+          </div>
+        </div>
+        <hr>
+        <div>
+          <div class="form-check">
+            <input v-model="sortRule" v-bind:value="'ascending'" class="form-check-input" type="radio" name="filterRule"
+              id="ascending" checked>
+            <label class="form-check-label" for="ascending">
+              Ascending
+            </label>
+          </div>
+          <div class="form-check">
+            <input v-model="sortRule" v-bind:value="'descending'" class="form-check-input" type="radio"
+              name="filterRule" id="descending">
+            <label class="form-check-label" for="descending">
+              Descending
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- modal for order confirmation -->
+    <div class="modal fade" id="orderConfirm" tabindex="-1" aria-labelledby="orderConfirmLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="orderConfirmLabel">Order Confirmed</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Your order has been placed! Thank you and visit again!</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Okay</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container mt-5">
+      <div v-if="searchStatus">
+        <div class="row">
+          <!-- v-text directive will be used to update the text with the value provided for data key 'sitename' -->
+          <h1 class="display-5 ms-4 mt-5" v-if="searchArr.length != 1">Displaying {{searchArr.length}} Results</h1>
+          <h1 class="display-5 ms-4 mt-5" v-else>Displaying {{searchArr.length}} Result</h1>
+          <div id="lessons" class="col-12 col-md-6 col-lg-4" v-for="lesson in searchArr">
+            <div class="card m-4 lesson">
+              <img v-bind:src="lesson.image" class="card-img-top" />
+              <!-- div containing lesson details -->
+              <div class="card-body">
+                <!-- {{ propertyName }} Moustache syntax will derive value from 'subject' attribute of 'lesson' object -->
+                <h4 class="card-title text-center">{{lesson.subject}}</h4>
+                <hr />
+                <!-- Similarly through moustache syntax, different values will be injected of the 'lesson' object -->
+                <p class="card-text">
+                  <i class="fa-solid fa-location-dot"></i> Location:
+                  {{lesson.location}}
+                </p>
+                <p class="card-text">
+                  <i class="fa-solid fa-tag"></i> Price: AED {{lesson.price}}
+                </p>
+                <p class="card-text">
+                  <i class="fa-solid fa-user"></i> Available Spaces: {{lesson.spaces}}
+                </p>
+
+                <div class="d-flex">
+                  <!-- Add to cart button -->
+                  <!-- v-on:click directive is used to add a click event handler that will trigger the 'addToCart' method. -->
+                  <!-- v-if directive will only render the button if the 'canAddToCart' method returns True-->
+                  <button v-on:click="addToCart(lesson)" v-if="canAddToCart(lesson)" id="btn_add"
+                    class="btn btn-outline-dark ms-auto">
+                    Add to Cart
+                  </button>
+
+                  <!-- v-else directive will be rendered if the preceding v-if returns False. This will show a disabled button -->
+                  <button disabled="disabled" v-else class="btn btn-danger ms-auto">
+                    Add to Cart
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else>
+        <!-- lesson page -->
+        <div v-if="showLessonPage">
+          <div class="row">
+            <!-- v-text directive will be used to update the text with the value provided for data key 'sitename' -->
+            <h1 class="display-5 text-center mt-5" v-text="sitename"></h1>
+            <div id="lessons" class="col-12 col-md-6 col-lg-4" v-for="lesson in sortedLessons">
+              <div class="card m-4 lesson">
+                <img v-bind:src="lesson.image" class="card-img-top" />
+                <!-- div containing lesson details -->
+                <div class="card-body">
+                  <!-- {{ propertyName }} Moustache syntax will derive value from 'subject' attribute of 'lesson' object -->
+                  <h4 class="card-title text-center">{{lesson.subject}}</h4>
+                  <hr />
+                  <!-- Similarly through moustache syntax, different values will be injected of the 'lesson' object -->
+                  <p class="card-text">
+                    <i class="fa-solid fa-location-dot"></i> Location:
+                    {{lesson.location}}
+                  </p>
+                  <p class="card-text">
+                    <i class="fa-solid fa-tag"></i> Price: AED {{lesson.price}}
+                  </p>
+                  <p class="card-text">
+                    <i class="fa-solid fa-user"></i> Available Spaces: {{lesson.spaces}}
+                  </p>
+
+                  <div class="d-flex">
+                    <!-- Add to cart button -->
+                    <!-- v-on:click directive is used to add a click event handler that will trigger the 'addToCart' method. -->
+                    <!-- v-if directive will only render the button if the 'canAddToCart' method returns True-->
+                    <button v-on:click="addToCart(lesson)" v-if="canAddToCart(lesson)" id="btn_add"
+                      class="btn btn-outline-dark ms-auto">
+                      Add to Cart
+                    </button>
+
+                    <!-- v-else directive will be rendered if the preceding v-if returns False. This will show a disabled button -->
+                    <button disabled="disabled" v-else class="btn btn-danger ms-auto">
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- cart and checkout page -->
+        <div v-else>
+          <div class="row">
+            <h1 class="display-5 ms-4 mt-5">Number of items in cart: {{cart.length}}</h1>
+            <div class="col-12 col-md-6 col-lg-4" v-for="lesson in cart">
+              <div class="card m-4">
+                <img v-bind:src="lesson.image" class="card-img-top" />
+                <!-- div containing lesson details -->
+                <div class="card-body">
+                  <!-- {{ propertyName }} Moustache syntax will derive value from 'subject' attribute of 'lesson' object -->
+                  <h4 class="card-title text-center">{{lesson.subject}}</h4>
+                  <hr />
+                  <!-- Similarly through moustache syntax, different values will be injected of the 'lesson' object -->
+                  <p class="card-text">
+                    <i class="fa-solid fa-location-dot"></i> Location:
+                    {{lesson.location}}
+                  </p>
+                  <p class="card-text">
+                    <i class="fa-solid fa-tag"></i> Price: AED {{lesson.price}}
+                  </p>
+
+                  <div class="d-flex">
+                    <!-- Add to cart button -->
+                    <!-- v-on:click directive is used to add a click event handler that will trigger the 'removeFromCart' method. -->
+                    <button v-on:click="removeFromCart(lesson.id)" id="btn_remove"
+                      class="btn btn-outline-danger ms-auto">
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <hr>
+          <h1 class="display-6 text-center pt-2">Checkout</h1>
+          <div class="row">
+            <div class="mb-3 col-12 col-md-6 col-lg-6">
+              <label for="name" class="form-label">Name</label>
+              <input v-model="name" type="text" class="form-control" id="name" placeholder="Fullname">
+            </div>
+            <div class="mb-3 col-12 col-md-6 col-lg-6">
+              <label for="phone" class="form-label">Phone</label>
+              <input v-model="phone" type="number" class="form-control" id="phone" placeholder="971501234567">
+            </div>
+            <div class="mb-3 d-flex justify-content-center">
+              <button v-if="validateForm" v-on:click="reset" id="btn_checkout" class="btn btn-success"
+                data-bs-toggle="modal" data-bs-target="#orderConfirm">
+                Checkout
+              </button>
+              <button disabled v-else id="btn_checkout" class="btn btn-success">
+                Checkout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- footer -->
+    <div class="footer text-center p-4 bg-secondary">
+      <a style="text-decoration: none" class="text-white fw-bold"
+        href="https://www.linkedin.com/in/abdul-haseeb-khan-b1020815a/">Abdul Haseeb Khan - M00792907</a>
+    </div>
+  </div>
+
+  <!-- vue.js code -->
+  <script>
+    function getInitialData() {
+      return {
+        // string variables for different functionalities (sort, search, validation)
+        sitename: "After School Activities",
+        sortBy: 'subject',
+        sortRule: 'ascending',
+        name: '',
+        phone: '',
+        searchTerm: '',
+        // boolean variables for showing/hiding divs
+        showLessonPage: true,
+        searchStatus: false,
+        cartLength: false,
+        // Creating lessons array which is imported from lessons.js
+        lessons: lessonsArr,
+        // array to store the purchased lessons
+        cart: [],
+        // array to store lessons that match the search terms
+        searchArr: [],
+      };
+    }
+    // Create a Vue instance with some options
+    let app = new Vue({
+      el: "#app",
+      // Initial data has been declared as a function
+      data: getInitialData(),
+      methods: {
+        reset() {
+          Object.assign(this.$data, getInitialData());
+        },
+        search() {
+          // search function that loops through the lesson cards and looks for the term typed in the search bar
+          this.searchArr = [];
+          this.searchStatus = true;
+          let term = this.searchTerm.toLowerCase();
+          let lessons = this.lessons;
+
+          // if nothing is searched, then the normal home page is shown
+          if (term == "") {
+            this.searchStatus = false;
+          }
+
+          /* if the term/s typed in the searchbar are found in the 'subject' or 'location' of a lesson,
+             then that lesson's object is pushed into the searchArr so that it can be rendered on the search page
+          */
+          for (let i = 0; i < lessons.length; i++) {
+            if (lessons[i].subject.toLowerCase().includes(term.toLowerCase()) || lessons[i].location.toLowerCase().includes(term.toLowerCase())) {
+              this.searchArr.push(lessons[i]);
+            }
+          }
+        },
+        addToCart: function (lesson) {
+          // remove 1 space from the lesson and add it to the cart
+          lesson.spaces--;
+          this.cart.push(lesson);
+        },
+        cartCount(id) {
+          // keeps count of the quantity of a particular lesson in the cart
+          let count = 0;
+          for (let i = 0; i < this.cart.length; i++) {
+            if (this.cart[i] === id) {
+              count++;
+            }
+          }
+          return count;
+        },
+        canAddToCart(lesson) {
+          // checks if the lesson has spaces available.
+          return lesson.spaces > this.cartCount(lesson.id);
+        },
+        showCheckoutPage() {
+          // terinary operation to toggle checkout page
+          this.showLessonPage = this.showLessonPage ? false : true;
+
+          // condition to allow the user to retain their serach reults page for better user experience
+          if (this.showLessonPage === true && this.searchTerm) {
+            this.searchStatus = true;
+          } else {
+            this.searchStatus = false;
+          }
+        },
+        // removes object based on attribute, 'id' in this case
+        removeFromCart(idValue) {
+          let index;
+          let arr = this.cart;
+          let lessons = this.lessons;
+
+          // finding the index of the object/lesson to be removed
+          for (let i = 0; i < arr.length; i++) {
+            if (arr[i]["id"] === idValue) {
+              index = i;
+            }
+          }
+
+          // adding back 1 space to the lesson that was removed from cart
+          for (let i = 0; i < lessons.length; i++) {
+            if (lessons[i]["id"] === idValue) {
+              lessons[i].spaces = lessons[i].spaces + 1;
+            }
+          }
+          arr.splice(index, 1);
+
+          // condition to automatically direct user to the home page when there are no items in the cart
+          if (this.cart.length === 0) {
+            this.showLessonPage = true;
+            this.searchTerm = '';
+          }
+        },
+      },
+      // Computed properties are added.
+      computed: {
+        // sorting the lessons
+        sortedLessons() {
+          let lessonsArr = this.lessons.slice(0);
+
+          // sorting price
+          if (this.sortBy === 'price') {
+            return this.sortRule === 'ascending' ?
+              lessonsArr.sort((a, b) => { return a.price - b.price; }) :
+              lessonsArr.sort((a, b) => { return b.price - a.price; });
+          }
+
+          // sorting spaces
+          if (this.sortBy === 'spaces') {
+            return this.sortRule === 'ascending' ?
+              lessonsArr.sort((a, b) => { return a.spaces - b.spaces; }) :
+              lessonsArr.sort((a, b) => { return b.spaces - a.spaces; });
+          }
+
+          // sorting subject
+          if (this.sortBy === 'subject') {
+            if (this.sortRule === 'ascending') {
+              return lessonsArr.sort((a, b) => (a.subject > b.subject) ? 1 : -1);
+            } else {
+              return lessonsArr.sort((a, b) => (a.subject < b.subject) ? 1 : -1);
+            }
+          }
+
+          // sorting location
+          if (this.sortBy === 'location') {
+            if (this.sortRule === 'ascending') {
+              return lessonsArr.sort((a, b) => (a.location > b.location) ? 1 : -1);
+            } else {
+              return lessonsArr.sort((a, b) => (a.location < b.location) ? 1 : -1);
+            }
+          }
+        },
+        // using regex with the test() method to validate the checkout form
+        validateForm() {
+          return /^(?!\s*$)[a-zA-Z.+\s'-]+$/.test(this.name) && /^(?!\s*$)[0-9.+\s'-]+$/.test(this.phone) && this.phone.length === 10 && this.cart.length > 0;
+        },
+      },
+    });
+  </script>
+  <!-- Link to Bootstrap 5's popper js library -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
+    integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
+    crossorigin="anonymous"></script>
+  <!-- link to bootstrap 5 js cdn -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+    integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF"
+    crossorigin="anonymous"></script>
+</body>
+
+</html>

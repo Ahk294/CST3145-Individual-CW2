@@ -1,0 +1,22 @@
+{
+  "name": "cst3145-individual-cw2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ahk294/CST3145-Individual-CW2.git"
+  },
+  "author": "Abdul Haseeb Khan",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ahk294/CST3145-Individual-CW2/issues"
+  },
+  "homepage": "https://github.com/Ahk294/CST3145-Individual-CW2#readme",
+  "dependencies": {
+    "env": "^0.0.2"
+  }
+}
