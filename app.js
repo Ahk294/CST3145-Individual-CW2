@@ -4,9 +4,6 @@ const express = require('express');
 // importing MongoClient from mongodb
 const { MongoClient } = require('mongodb');
 
-// importing cors
-const cors = require('cors');
-
 // imports for static file middleware
 const path = require('path');
 const fs = require('fs');
@@ -29,14 +26,31 @@ app.use((req, res, next) => {
     next();
 });
 
-// using cors to avoid CORS-Policy violation
-app.use(cors());
-
 // connecting to the 'activities' database in MongoDB
 let db;
 MongoClient.connect(ConnectionString, (err, client) => {
     db = client.db('activities');
 });
+
+// display a message for root path to show that API is working
+app.get('/', (req, res, next) => {
+    res.send('Select a collection, e.g., /collection/messages or select an image, e.g., /arduino.png');
+});
+
+// get the collection name
+app.param('collectionName', (req, res, next, collectionName) => {
+    req.collection = db.collection(collectionName);
+    return next();
+});
+
+// get the specific collection
+app.get('/collection/:collectionName', (req, res, next) => {
+    req.collection.find({}).toArray((e, results) => {
+        if (e) return next(e);
+        res.send(results);
+    });
+});
+
 
 // logger middleware
 app.use(function (req, res, next) {
