@@ -35,8 +35,30 @@ MongoClient.connect(ConnectionString, (err, client) => {
 });
 
 // logger middleware
-app.use((req, res, next) => {
+app.use(function (req, res, next) {
     console.log("Request IP: " + req.url);
     console.log("Request Date: " + new Date());
     next();
+});
+
+// static image file middleware
+app.use(function (req, res, next) {
+    let filePath = path.join(__dirname, "static", req.url);
+    fs.stat(filePath, function (err, fileInfo) {
+        if (err) {
+            next();
+            return;
+        }
+
+        if (fileInfo.isFile()) {
+            res.sendFile(filePath);
+        } else {
+            next();
+        }
+    });
+});
+
+// setting port for the application
+app.listen(Port, function () {
+    console.log("App started on port 3000");
 });
