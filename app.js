@@ -7,6 +7,10 @@ const { MongoClient } = require('mongodb');
 // importing cors
 const cors = require('cors');
 
+// imports for static file middleware
+const path = require('path');
+const fs = require('fs');
+
 // using the express server
 const app = express();
 
