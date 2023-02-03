@@ -58,6 +58,14 @@ app.use(function (req, res, next) {
     });
 });
 
+// handling error from the previous middleware
+app.use(function (req, res) {
+    // Sets the status code to 404
+    res.status(404);
+    // Sends the error "File not found!”
+    res.send("File not found!");
+});
+
 // setting port for the application
 app.listen(Port, function () {
     console.log("App started on port 3000");
