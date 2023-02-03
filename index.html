@@ -7,8 +7,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- Link to Vue.js library -->
   <script src="https://cdn.jsdelivr.net/npm/vue@2.7.10/dist/vue.js"></script>
-  <!-- importing the lessons -->
-  <script src="lessons.js"></script>
   <!-- link to bootstrap 5 css cdn -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous" />
@@ -277,7 +275,7 @@
               <input v-model="phone" type="number" class="form-control" id="phone" placeholder="971501234567">
             </div>
             <div class="mb-3 d-flex justify-content-center">
-              <button v-if="validateForm" v-on:click="reset" id="btn_checkout" class="btn btn-success"
+              <button v-if="validateForm" v-on:click="order" id="btn_checkout" class="btn btn-success"
                 data-bs-toggle="modal" data-bs-target="#orderConfirm">
                 Checkout
               </button>
@@ -299,8 +297,11 @@
 
   <!-- vue.js code -->
   <script>
-    function getInitialData() {
-      return {
+    // Create a Vue instance with some options
+    let app = new Vue({
+      el: "#app",
+      // Initial data has been declared as a function
+      data: {
         // string variables for different functionalities (sort, search, validation)
         sitename: "After School Activities",
         sortBy: 'subject',
@@ -312,22 +313,52 @@
         showLessonPage: true,
         searchStatus: false,
         cartLength: false,
-        // Creating lessons array which is imported from lessons.js
-        lessons: lessonsArr,
+        // Creating lessons array which is populated from the server
+        lessons: [],
         // array to store the purchased lessons
         cart: [],
         // array to store lessons that match the search terms
-        searchArr: [],
-      };
-    }
-    // Create a Vue instance with some options
-    let app = new Vue({
-      el: "#app",
-      // Initial data has been declared as a function
-      data: getInitialData(),
+        searchArr: []
+      },
       methods: {
-        reset() {
-          Object.assign(this.$data, getInitialData());
+        order() {
+          // taking only one intsance of each lesson from the cart to create an array of the lessons ordered with no duplication
+          let uniqueLessonsArray = [
+            ...new Map(this.cart.map((item) => [item["_id"], item])).values(),
+          ];
+
+          // creating the order object
+          let orderObj = {
+            name: this.name,
+            phone: this.phone,
+            lessons: uniqueLessonsArray
+          };
+
+          // replacing the default '_id' key of the lessons with 'lesson_id' to store in MongoDB 'orders' collection
+          orderObj.lessons.forEach((obj) => {
+            obj['lesson_id'] = obj['_id'];
+            delete obj['_id'];
+
+            // adding the spaces ordered by the person, not the number of spaces remaining
+            obj['spaces'] = 5 - obj['spaces'];
+          });
+
+          // sendnig POST request to store the order
+          fetch('http://localhost:3000/orders', {
+            method: 'POST', // or 'PUT'
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(orderObj),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log('Success:', data);
+            })
+            .catch((error) => {
+              console.error('Error:', error);
+            });
+
         },
         search() {
           // search function that loops through the lesson cards and looks for the term typed in the search bar
@@ -451,6 +482,21 @@
           return /^(?!\s*$)[a-zA-Z.+\s'-]+$/.test(this.name) && /^(?!\s*$)[0-9.+\s'-]+$/.test(this.phone) && this.phone.length === 10 && this.cart.length > 0;
         },
       },
+      created: function () {
+        console.log('requesting data from server ...');
+
+        fetch('http://localhost:3000/lessons').then(
+          function (response) {
+            response.json().then(
+              function (json) {
+                app.lessons = json;
+                console.log(json);
+              }
+            );
+          }
+        );
+      }
+
     });
   </script>
   <!-- Link to Bootstrap 5's popper js library -->

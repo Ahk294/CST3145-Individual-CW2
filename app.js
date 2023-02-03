@@ -2,7 +2,9 @@
 const express = require('express');
 
 // importing MongoClient from mongodb
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
+
+const cors = require('cors');
 
 // imports for static file middleware
 const path = require('path');
@@ -26,6 +28,8 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use(cors());
+
 // connecting to the 'activities' database in MongoDB
 let db;
 MongoClient.connect(ConnectionString, (err, client) => {
@@ -34,7 +38,7 @@ MongoClient.connect(ConnectionString, (err, client) => {
 
 // display a message for root path to show that API is working
 app.get('/', (req, res, next) => {
-    res.send('Select a collection, e.g., /collection/messages or select an image, e.g., /arduino.png');
+    res.send('Select a collection, e.g., /lessons or select an image, e.g., /arduino.png');
 });
 
 // get the collection name
@@ -43,14 +47,21 @@ app.param('collectionName', (req, res, next, collectionName) => {
     return next();
 });
 
-// get the specific collection
-app.get('/collection/:collectionName', (req, res, next) => {
-    req.collection.find({}).toArray((e, results) => {
+// get the specific collection (lessons)
+app.get('/lessons', (req, res, next) => {
+    db.collection('lessons').find({}).toArray((e, results) => {
         if (e) return next(e);
         res.send(results);
     });
 });
 
+// insert into a specific collection (orders)
+app.post('/orders', (req, res, next) => {
+    db.collection('orders').insertOne(req.body, (e, results) => {
+        if (e) return next(e);
+        res.send(results.ops);
+    });
+});
 
 // logger middleware
 app.use(function (req, res, next) {
@@ -61,7 +72,7 @@ app.use(function (req, res, next) {
 
 // static image file middleware
 app.use(function (req, res, next) {
-    let filePath = path.join(__dirname, "static", req.url);
+    let filePath = path.join(__dirname, "static/images", req.url);
     fs.stat(filePath, function (err, fileInfo) {
         if (err) {
             next();
