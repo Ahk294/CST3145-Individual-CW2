@@ -254,7 +254,7 @@
                   <div class="d-flex">
                     <!-- Add to cart button -->
                     <!-- v-on:click directive is used to add a click event handler that will trigger the 'removeFromCart' method. -->
-                    <button v-on:click="removeFromCart(lesson.id)" id="btn_remove"
+                    <button v-on:click="removeFromCart(lesson._id)" id="btn_remove"
                       class="btn btn-outline-danger ms-auto">
                       Remove
                     </button>
@@ -340,24 +340,36 @@
             delete obj['_id'];
 
             // adding the spaces ordered by the person, not the number of spaces remaining
-            obj['spaces'] = 5 - obj['spaces'];
+            obj['spaces'] = 20 - obj['spaces'];
           });
 
-          // sendnig POST request to store the order
-          fetch('http://localhost:3000/orders', {
-            method: 'POST', // or 'PUT'
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(orderObj),
+          fetch("http://localhost:3000/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(orderObj)
           })
-            .then((response) => response.json())
-            .then((data) => {
-              console.log('Success:', data);
-            })
-            .catch((error) => {
-              console.error('Error:', error);
+            .then(res => res.json())
+            .then(data => {
+              // do something with the response data from the PUT request
+              console.log({ "Success": data });
             });
+
+          orderObj.lessons.forEach((obj) => {
+            let spacesLeft = 20 - obj['spaces'];
+            fetch("http://localhost:3000/lessons/" + obj['lesson_id'], {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ spaces: spacesLeft })
+            })
+              .then(res => res.json())
+              .then(data => {
+                // do something with the response data from the PUT request
+                console.log({ "Success": data });
+
+                this.cart = [];
+              });
+          });
+
 
         },
         search() {
@@ -365,21 +377,26 @@
           this.searchArr = [];
           this.searchStatus = true;
           let term = this.searchTerm.toLowerCase();
-          let lessons = this.lessons;
 
           // if nothing is searched, then the normal home page is shown
           if (term == "") {
             this.searchStatus = false;
           }
 
-          /* if the term/s typed in the searchbar are found in the 'subject' or 'location' of a lesson,
-             then that lesson's object is pushed into the searchArr so that it can be rendered on the search page
+          /* if the term/s typed in the searchbar are found in the 'subject' or 'location' of a lesson in the database,
+             then that lesson's json object is pushed into the searchArr so that it can be rendered on the search page
           */
-          for (let i = 0; i < lessons.length; i++) {
-            if (lessons[i].subject.toLowerCase().includes(term.toLowerCase()) || lessons[i].location.toLowerCase().includes(term.toLowerCase())) {
-              this.searchArr.push(lessons[i]);
+          fetch('http://localhost:3000/lessons/' + term).then(
+            function (response) {
+              response.json().then(
+                function (json) {
+                  app.searchArr = json;
+                  console.log(json);
+                }
+              );
             }
-          }
+          );
+
         },
         addToCart: function (lesson) {
           // remove 1 space from the lesson and add it to the cart
@@ -398,9 +415,12 @@
         },
         canAddToCart(lesson) {
           // checks if the lesson has spaces available.
-          return lesson.spaces > this.cartCount(lesson.id);
+          return lesson.spaces > this.cartCount(lesson._id);
         },
         showCheckoutPage() {
+          if (this.cart.length === 0) {
+            location.reload();
+          }
           // terinary operation to toggle checkout page
           this.showLessonPage = this.showLessonPage ? false : true;
 
@@ -419,14 +439,14 @@
 
           // finding the index of the object/lesson to be removed
           for (let i = 0; i < arr.length; i++) {
-            if (arr[i]["id"] === idValue) {
+            if (arr[i]["_id"] === idValue) {
               index = i;
             }
           }
 
           // adding back 1 space to the lesson that was removed from cart
           for (let i = 0; i < lessons.length; i++) {
-            if (lessons[i]["id"] === idValue) {
+            if (lessons[i]["_id"] === idValue) {
               lessons[i].spaces = lessons[i].spaces + 1;
             }
           }

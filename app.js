@@ -59,7 +59,33 @@ app.get('/lessons', (req, res, next) => {
 app.post('/orders', (req, res, next) => {
     db.collection('orders').insertOne(req.body, (e, results) => {
         if (e) return next(e);
-        res.send(results.ops);
+        res.send(results);
+    });
+});
+
+// update a specific item from a collection (lesson spaces)
+app.put('/lessons/:id', (req, res, next) => {
+    db.collection('lessons').updateOne(
+        { _id: new ObjectId(req.params.id) },
+        { $set: req.body },
+        { safe: true, multi: false },
+        (e, result) => {
+            if (e) return next(e);
+            res.send((result) ? { msg: 'success' } : { msg: 'error' });
+        }
+    );
+});
+
+// get a specific item from a collection (lessons)
+app.get('/lessons/:search', (req, res, next) => {
+    db.collection('lessons').find({}).toArray((e, results) => {
+        if (e) return next(e);
+        let searchResults = results.filter((item) => {
+            return (
+                item.subject.toLowerCase().match(req.params.search.toLowerCase()) || item.location.toLowerCase().match(req.params.search.toLowerCase())
+            );
+        });
+        res.send(searchResults);
     });
 });
 
@@ -98,4 +124,4 @@ app.use(function (req, res) {
 // setting port for the application
 app.listen(Port, function () {
     console.log("App started on port 3000");
-});
+});;
