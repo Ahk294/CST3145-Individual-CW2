@@ -36,6 +36,14 @@ MongoClient.connect(ConnectionString, (err, client) => {
     db = client.db('activities');
 });
 
+// logger middleware
+app.use(function (req, res, next) {
+    console.log("Request IP: " + req.url);
+    console.log("Request Date: " + new Date());
+    next();
+});
+
+
 // display a message for root path to show that API is working
 app.get('/', (req, res, next) => {
     res.send('Select a collection, e.g., /lessons or select an image, e.g., /arduino.png');
@@ -87,13 +95,6 @@ app.get('/lessons/:search', (req, res, next) => {
         });
         res.send(searchResults);
     });
-});
-
-// logger middleware
-app.use(function (req, res, next) {
-    console.log("Request IP: " + req.url);
-    console.log("Request Date: " + new Date());
-    next();
 });
 
 // static image file middleware
