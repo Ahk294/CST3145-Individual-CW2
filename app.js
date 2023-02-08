@@ -4,6 +4,7 @@ const express = require('express');
 // importing MongoClient from mongodb
 const { MongoClient, ObjectId } = require('mongodb');
 
+// importing cors library to avoid CORS-Policy violation
 const cors = require('cors');
 
 // imports for static file middleware
@@ -28,6 +29,7 @@ app.use((req, res, next) => {
     next();
 });
 
+// using cors
 app.use(cors());
 
 // connecting to the 'activities' database in MongoDB

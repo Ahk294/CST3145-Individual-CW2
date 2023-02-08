@@ -15,6 +15,12 @@
     integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
   <title>Activities</title>
+
+  <style>
+    .nav-item button {
+      outline: none !important;
+    }
+  </style>
 </head>
 
 <body class="bg-light">
@@ -23,37 +29,37 @@
     <!-- navbar -->
     <nav class="navbar fixed-top navbar-expand-lg navbar-dark bg-dark py-3">
       <div class="container-fluid">
-        <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse"
-          data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
-          aria-label="Toggle navigation">
+        <!-- <a class="navbar-brand" href="#">After School Activities</a> -->
+        <form class="d-flex">
+          <!-- disables the search field if the user is on checkout page -->
+          <input v-if="showLessonPage" v-on:keyup="search" v-model="searchTerm" class="form-control" type="search"
+            placeholder="Search" aria-label="Search" />
+          <input v-else disabled v-on:keyup="search" v-model="searchTerm" class="form-control" type="search"
+            placeholder="Search" aria-label="Search" />
+        </form>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav mb-lg-0 container-fluid">
+          <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
             <li class="nav-item">
-              <button v-if="showLessonPage" class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas"
+              <a v-if="showLessonPage" class="nav-link active" data-bs-toggle="offcanvas"
                 data-bs-target="#offcanvasFilter" aria-controls="offcanvasFilter">
                 <i class="fa-solid fa-filter"></i> Show Filter
-              </button>
-              <button v-else disabled class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas"
-                data-bs-target="#offcanvasFilter" aria-controls="offcanvasFilter">
+              </a>
+              <a v-else disabled class="nav-link" data-bs-toggle="offcanvas" data-bs-target="#offcanvasFilter"
+                aria-controls="offcanvasFilter">
                 <i class="fa-solid fa-filter"></i> Show Filter
-              </button>
+              </a>
             </li>
-            <li class="nav-item ms-auto">
-              <!-- disables the search field if the user is on checkout page -->
-              <input v-if="showLessonPage" v-on:keyup="search" v-model="searchTerm" class="form-control" type="search"
-                placeholder="Search" aria-label="Search" />
-              <input v-else disabled v-on:keyup="search" v-model="searchTerm" class="form-control" type="search"
-                placeholder="Search" aria-label="Search" />
-            </li>
-            <li class="nav-item ms-auto">
+            <li class="nav-item">
               <!-- disables the button if the cart length is 0 -->
               <button :disabled="cart.length == 0" v-on:click="showCheckoutPage" v-if="showLessonPage"
                 class="btn btn-outline-light" type="submit">
                 <i class="fa-solid fa-cart-shopping"></i> Checkout ({{cart.length}})
               </button>
-              <button v-on:click="showCheckoutPage" v-else class="btn btn-outline-light ms-3" type="submit">
+              <button v-on:click="showCheckoutPage" v-else class="btn btn-outline-light" type="submit">
                 <i class="fa-solid fa-home"></i> Home
               </button>
             </li>
