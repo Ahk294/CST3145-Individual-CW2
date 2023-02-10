@@ -28,21 +28,23 @@
   <div id="app">
     <!-- navbar -->
     <nav class="navbar fixed-top navbar-expand-lg navbar-dark bg-dark py-3">
-      <div class="container-fluid">
-        <!-- <a class="navbar-brand" href="#">After School Activities</a> -->
-        <form class="d-flex">
-          <!-- disables the search field if the user is on checkout page -->
-          <input v-if="showLessonPage" v-on:keyup="search" v-model="searchTerm" class="form-control" type="search"
-            placeholder="Search" aria-label="Search" />
-          <input v-else disabled v-on:keyup="search" v-model="searchTerm" class="form-control" type="search"
-            placeholder="Search" aria-label="Search" />
-        </form>
+      <div class="container">
+        <a href="#" v-on:click="showCheckoutPage" class="navbar-brand">After School Activities</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
           aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          <ul class="navbar-nav mb-2 mb-lg-0 w-100">
+            <li class="nav-item ms-auto me-auto w-75">
+              <form class="d-flex">
+                <!-- disables the search field if the user is on checkout page -->
+                <input v-if="showLessonPage" v-on:keyup="search" v-model="searchTerm" class="form-control" type="search"
+                  placeholder="Search" aria-label="Search" />
+                <input v-else disabled v-on:keyup="search" v-model="searchTerm" class="form-control" type="search"
+                  placeholder="Search" aria-label="Search" />
+              </form>
+            </li>
             <li class="nav-item">
               <a v-if="showLessonPage" class="nav-link active" data-bs-toggle="offcanvas"
                 data-bs-target="#offcanvasFilter" aria-controls="offcanvasFilter">
@@ -239,7 +241,7 @@
         <!-- cart and checkout page -->
         <div v-else>
           <div class="row">
-            <h1 class="display-5 ms-4 mt-5">Number of items in cart: {{cart.length}}</h1>
+            <h1 class="display-5 mt-5">Number of items: {{cart.length}}</h1>
             <div class="col-12 col-md-6 col-lg-4" v-for="lesson in cart">
               <div class="card m-4">
                 <img v-bind:src="lesson.image" class="card-img-top" />
@@ -321,6 +323,7 @@
         cartLength: false,
         // Creating lessons array which is populated from the server
         lessons: [],
+        duplicate_lessons: [],
         // array to store the purchased lessons
         cart: [],
         // array to store lessons that match the search terms
@@ -333,22 +336,39 @@
             ...new Map(this.cart.map((item) => [item["_id"], item])).values(),
           ];
 
+          let orderedLessonsArray = [];
+
+          uniqueLessonsArray.forEach((lesson) => {
+            let lessonObj = {};
+            this.duplicate_lessons.forEach((item) => {
+              if (lesson._id === item._id) {
+                lessonObj = {
+                  id: lesson._id,
+                  lesson_name: lesson.subject,
+                  spaces: item.spaces - lesson.spaces,
+                  rem_spaces: item.spaces - (item.spaces - lesson.spaces)
+                };
+              }
+            });
+
+            orderedLessonsArray.push(lessonObj);
+          });
+
           // creating the order object
           let orderObj = {
             name: this.name,
             phone: this.phone,
-            lessons: uniqueLessonsArray
+            lessons: orderedLessonsArray,
+            total_qty: this.cart.length
           };
 
           // replacing the default '_id' key of the lessons with 'lesson_id' to store in MongoDB 'orders' collection
           orderObj.lessons.forEach((obj) => {
             obj['lesson_id'] = obj['_id'];
             delete obj['_id'];
-
-            // adding the spaces ordered by the person, not the number of spaces remaining
-            obj['spaces'] = 20 - obj['spaces'];
           });
 
+          // fecth API used to save a new order with POST
           fetch("http://localhost:3000/orders", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -360,12 +380,12 @@
               console.log({ "Success": data });
             });
 
-          orderObj.lessons.forEach((obj) => {
-            let spacesLeft = 20 - obj['spaces'];
-            fetch("http://localhost:3000/lessons/" + obj['lesson_id'], {
+          // fetch API to update the number of available spaces in lessons with PUT
+          orderedLessonsArray.forEach((lesson) => {
+            fetch("http://localhost:3000/lessons/" + lesson['id'], {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ spaces: spacesLeft })
+              body: JSON.stringify({ spaces: lesson['rem_spaces'] })
             })
               .then(res => res.json())
               .then(data => {
@@ -376,10 +396,10 @@
               });
           });
 
-
+          // this.cart = [];
         },
         search() {
-          // search function that loops through the lesson cards and looks for the term typed in the search bar
+          // 'search as you type' functionality has been implemented using 'v-model'
           this.searchArr = [];
           this.searchStatus = true;
           let term = this.searchTerm.toLowerCase();
@@ -389,9 +409,7 @@
             this.searchStatus = false;
           }
 
-          /* if the term/s typed in the searchbar are found in the 'subject' or 'location' of a lesson in the database,
-             then that lesson's json object is pushed into the searchArr so that it can be rendered on the search page
-          */
+          // fetch API making GET request with the search term
           fetch('http://localhost:3000/lessons/' + term).then(
             function (response) {
               response.json().then(
@@ -508,6 +526,7 @@
           return /^(?!\s*$)[a-zA-Z.+\s'-]+$/.test(this.name) && /^(?!\s*$)[0-9.+\s'-]+$/.test(this.phone) && this.phone.length === 10 && this.cart.length > 0;
         },
       },
+      // the created property has the fetch API that retrieves all the lessons with GET
       created: function () {
         console.log('requesting data from server ...');
 
@@ -516,6 +535,17 @@
             response.json().then(
               function (json) {
                 app.lessons = json;
+                console.log(json);
+              }
+            );
+          }
+        );
+
+        fetch('http://localhost:3000/lessons').then(
+          function (response) {
+            response.json().then(
+              function (json) {
+                app.duplicate_lessons = json;
                 console.log(json);
               }
             );

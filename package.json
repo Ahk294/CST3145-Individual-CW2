@@ -1,7 +1,7 @@
 {
   "name": "cst3145-individual-cw2",
   "version": "1.0.0",
-  "description": "",
+  "description": "Done by Abdul Haseeb Khan - M00792907",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -20,6 +20,6 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "mongodb": "^4.13.0"
+    "mongodb": "^4.14.0"
   }
 }

@@ -57,7 +57,7 @@ app.param('collectionName', (req, res, next, collectionName) => {
     return next();
 });
 
-// get the specific collection (lessons)
+// get route to return all lessons
 app.get('/lessons', (req, res, next) => {
     db.collection('lessons').find({}).toArray((e, results) => {
         if (e) return next(e);
@@ -65,7 +65,7 @@ app.get('/lessons', (req, res, next) => {
     });
 });
 
-// insert into a specific collection (orders)
+// post route to save new order to the orders collection
 app.post('/orders', (req, res, next) => {
     db.collection('orders').insertOne(req.body, (e, results) => {
         if (e) return next(e);
@@ -73,7 +73,7 @@ app.post('/orders', (req, res, next) => {
     });
 });
 
-// update a specific item from a collection (lesson spaces)
+// put route to update the number of available spaces in the lessesons collection after an order is placed
 app.put('/lessons/:id', (req, res, next) => {
     db.collection('lessons').updateOne(
         { _id: new ObjectId(req.params.id) },
@@ -86,7 +86,7 @@ app.put('/lessons/:id', (req, res, next) => {
     );
 });
 
-// get a specific item from a collection (lessons)
+// get route used for the search functionality
 app.get('/lessons/:search', (req, res, next) => {
     db.collection('lessons').find({}).toArray((e, results) => {
         if (e) return next(e);
